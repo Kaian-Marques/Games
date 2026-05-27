@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK Setup | Performance Extrema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyberDark: '#070709',
+                        cyberBlack: '#050507',
+                        cyberCard: '#0a0a0f',
+                        neonBlue: '#00f0ff',
+                        electricBlue: '#3b82f6',
+                    },
+                    boxShadow: {
+                        'neon-glow': '0 0 15px rgba(0, 240, 255, 0.25)',
+                        'neon-strong': '0 0 25px rgba(0, 240, 255, 0.5)',
+                        'blue-glow': '0 0 20px rgba(59, 130, 246, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Efeito de Scanline Futurista Discreto */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 99999;
+            opacity: 0.15;
+            pointer-events: none;
+            background-size: 100% 4px, 6px 100%;
+        }
+
+        /* Animação suave de flutuação */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050507;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+            box-shadow: 0 0 10px #00f0ff;
+        }
+    </style>
+</head>
+<body class="bg-cyberDark text-slate-300 font-sans min-h-screen overflow-x-hidden selection:bg-neonBlue/20 selection:text-neonBlue">
+
+    <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-electricBlue/10 rounded-full blur-[130px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-neonBlue/5 rounded-full blur-[120px]"></div>
+    </div>
+
+    <nav class="fixed w-full z-50 backdrop-blur-md bg-cyberDark/80 border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group">
+                    <div class="w-8 h-8 bg-gradient-to-br from-neonBlue to-electricBlue rounded-lg flex items-center justify-center shadow-neon-glow group-hover:shadow-neon-strong transition-all duration-300">
+                        <i data-lucide="zap" class="w-5 h-5 text-cyberDark stroke-[2.5]"></i>
+                    </div>
+                    <span class="font-bold text-2xl tracking-tighter text-white">
+                        ZK <span class="text-neonBlue">Setup</span>
+                    </span>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#inicio" class="text-sm font-medium text-white hover:text-neonBlue transition-colors duration-300">Início</a>
+                    <a href="#pcs" class="text-sm font-medium hover:text-neonBlue transition-colors duration-300">PCs</a>
+                    <a href="#promocoes" class="text-sm font-medium hover:text-neonBlue transition-colors duration-300">Promoções</a>
+                    <a href="#sobre" class="text-sm font-medium hover:text-neonBlue transition-colors duration-300">Sobre</a>
+                    <a href="#contato" class="text-sm font-medium hover:text-neonBlue transition-colors duration-300">Contato</a>
+                    
+                    <button class="bg-transparent border border-neonBlue text-neonBlue hover:bg-neonBlue hover:text-cyberDark px-6 py-2 rounded-full font-semibold flex items-center gap-2 transition-all duration-300 shadow-neon-glow hover:shadow-neon-strong transform hover:-translate-y-0.5">
+                        <i data-lucide="shopping-cart" class="w-4 h-4"></i> Comprar Agora
+                    </button>
+                </div>
+
+                <div class="md:hidden flex items-center">
+                    <button id="menuBtn" class="text-slate-300 hover:text-white focus:outline-none">
+                        <i data-lucide="menu" id="menuIcon" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobileMenu" class="hidden md:hidden bg-cyberCard/95 border-b border-white/5 absolute w-full left-0 transition-all duration-300">
+            <div class="px-4 pt-2 pb-6 space-y-2">
+                <a href="#inicio" class="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-white/5 hover:text-neonBlue">Início</a>
+                <a href="#pcs" class="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-white/5 hover:text-neonBlue">PCs</a>
+                <a href="#promocoes" class="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-white/5 hover:text-neonBlue">Promoções</a>
+                <a href="#sobre" class="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-white/5 hover:text-neonBlue">Sobre</a>
+                <a href="#contato" class="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-white/5 hover:text-neonBlue">Contato</a>
+                <button class="w-full mt-4 bg-neonBlue text-cyberDark px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-neon-strong">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i> Comprar Agora
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="relative z-10">
+
+        <section id="inicio" class="relative pt-36 pb-20 lg:pt-52 lg:pb-32 px-4 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+            <div class="flex-1 text-center lg:text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-electricBlue/10 border border-electricBlue/20 text-neonBlue text-sm font-medium mb-6">
+                    <span class="w-2 h-2 rounded-full bg-neonBlue animate-pulse"></span>
+                    Novos Hardware Série RTX 4000 & Ryzen 9
+                </div>
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                    Performance <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonBlue to-electricBlue">Extrema</span> <br>
+                    Para Seu Setup.
+                </h1>
+                <p class="text-base sm:text-lg md:text-xl text-slate-400 mb-10 max-w-xl mx-auto lg:mx-0">
+                    Garante o máximo de FPS com estabilidade brutal e montagem premium industrial de alta fidelidade. Seu próximo nível começa aqui.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                    <a href="#pcs" class="w-full sm:w-auto bg-gradient-to-r from-electricBlue to-neonBlue text-white font-bold px-8 py-4 rounded-full transition-all duration-300 shadow-blue-glow hover:shadow-neon-strong flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                        Ver PCs Gamers <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </a>
+                    <button class="w-full sm:w-auto bg-transparent border border-white/10 hover:border-neonBlue/40 hover:bg-white/5 text-white px-8 py-4 rounded-full font-bold transition-all duration-300">
+                        Montar Setup Custom
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 relative group w-full max-w-lg lg:max-w-none">
+                <div class="absolute inset-0 bg-electricBlue/20 blur-[90px] rounded-full group-hover:bg-neonBlue/20 transition-all duration-700"></div>
+                <img 
+                    src="https://images.unsplash.com/photo-1603481546238-487240415921?q=80&w=1200&auto=format&fit=crop" 
+                    alt="Setup Gamer Premium ZK" 
+                    class="relative z-10 rounded-2xl border border-white/10 shadow-2xl animate-float"
+                />
+            </div>
+        </section>
+
+        <section id="pcs" class="py-24 bg-cyberBlack/60 border-y border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white mb-4">Setups em <span class="text-neonBlue">Destaque</span></h2>
+                    <p class="text-slate-400 max-w-md mx-auto">Máquinas meticulosamente projetadas para rodar os títulos mais pesados no talo.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <div class="group bg-cyberCard border border-white/5 rounded-2xl overflow-hidden hover:border-neonBlue/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-neon-glow">
+                        <div class="relative h-48 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-cyberCard to-transparent z-10"></div>
+                            <img src="https://images.unsplash.com/photo-1587831990711-23ca6441447b?q=80&w=600&auto=format&fit=crop" alt="RTX Starter" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110">
+                        </div>
+                        <div class="p-6 relative z-20 -mt-6">
+                            <h3 class="text-xl font-bold text-white mb-2">RTX Starter</h3>
+                            <p class="text-xs text-slate-400 mb-6 min-h-[32px]">i5 12400F • RTX 3060 • 16GB RAM • 1TB NVMe</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider">À vista</span>
+                                    <span class="text-xl font-bold text-neonBlue">R$ 4.599,00</span>
+                                </div>
+                                <button class="bg-white/5 group-hover:bg-neonBlue group-hover:text-cyberDark border border-white/10 group-hover:border-transparent p-3 rounded-xl transition-all duration-300">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group bg-cyberCard border border-white/5 rounded-2xl overflow-hidden hover:border-neonBlue/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-neon-glow">
+                        <div class="relative h-48 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-cyberCard to-transparent z-10"></div>
+                            <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=600&auto=format&fit=crop" alt="Ultra Ryzen" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110">
+                        </div>
+                        <div class="p-6 relative z-20 -mt-6">
+                            <h3 class="text-xl font-bold text-white mb-2">Ultra Ryzen</h3>
+                            <p class="text-xs text-slate-400 mb-6 min-h-[32px]">Ryzen 7 5800X • RTX 4060 Ti • 32GB RAM</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider">À vista</span>
+                                    <span class="text-xl font-bold text-neonBlue">R$ 7.299,00</span>
+                                </div>
+                                <button class="bg-white/5 group-hover:bg-neonBlue group-hover:text-cyberDark border border-white/10 group-hover:border-transparent p-3 rounded-xl transition-all duration-300">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group bg-cyberCard border border-white/5 rounded-2xl overflow-hidden hover:border-neonBlue/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-neon-glow">
+                        <div class="relative h-48 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-cyberCard to-transparent z-10"></div>
+                            <img src="https://images.unsplash.com/photo-1610465299996-30f240ac2b1c?q=80&w=600&auto=format&fit=crop" alt="Xeon Beast" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110">
+                        </div>
+                        <div class="p-6 relative z-20 -mt-6">
+                            <h3 class="text-xl font-bold text-white mb-2">Xeon Beast</h3>
+                            <p class="text-xs text-slate-400 mb-6 min-h-[32px]">Dual Xeon • RTX 4070 • 64GB RAM • 2TB SSD</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider">À vista</span>
+                                    <span class="text-xl font-bold text-neonBlue">R$ 11.599,00</span>
+                                </div>
+                                <button class="bg-white/5 group-hover:bg-neonBlue group-hover:text-cyberDark border border-white/10 group-hover:border-transparent p-3 rounded-xl transition-all duration-300">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group bg-cyberCard border border-white/5 rounded-2xl overflow-hidden hover:border-neonBlue/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-neon-glow">
+                        <div class="relative h-48 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-cyberCard to-transparent z-10"></div>
+                            <img src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=600&auto=format&fit=crop" alt="RX Performance" class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110">
+                        </div>
+                        <div class="p-6 relative z-20 -mt-6">
+                            <h3 class="text-xl font-bold text-white mb-2">RX Performance</h3>
+                            <p class="text-xs text-slate-400 mb-6 min-h-[32px]">Ryzen 5 7600 • RX 7800 XT • 32GB DDR5</p>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider">À vista</span>
+                                    <span class="text-xl font-bold text-neonBlue">R$ 8.999,00</span>
+                                </div>
+                                <button class="bg-white/5 group-hover:bg-neonBlue group-hover:text-cyberDark border border-white/10 group-hover:border-transparent p-3 rounded-xl transition-all duration-300">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="sobre" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Por que escolher a ZK Setup?</h2>
+                <p class="text-slate-400">Garantimos a excelência máxima em cada máquina montada.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group">
+                    <div class="w-14 h-14 bg-electricBlue/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:shadow-neon-glow">
+                        <i data-lucide="cpu" class="w-7 h-7 text-neonBlue"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Alta Performance</h3>
+                    <p class="text-sm text-slate-400">Hardware premium stressado e testado no limite antes do envio.</p>
+                </div>
+
+                <div class="p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group">
+                    <div class="w-14 h-14 bg-electricBlue/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:shadow-neon-glow">
+                        <i data-lucide="shield-check" class="w-7 h-7 text-neonBlue"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Garantia ZK</h3>
+                    <p class="text-sm text-slate-400">Suporte VIP e 12 meses de garantia total peça por peça.</p>
+                </div>
+
+                <div class="p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group">
+                    <div class="w-14 h-14 bg-electricBlue/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:shadow-neon-glow">
+                        <i data-lucide="truck" class="w-7 h-7 text-neonBlue"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Entrega Rápida</h3>
+                    <p class="text-sm text-slate-400">Embalagem industrial antichoque com envio expresso segurado.</p>
+                </div>
+
+                <div class="p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group">
+                    <div class="w-14 h-14 bg-electricBlue/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:shadow-neon-glow">
+                        <i data-lucide="zap" class="w-7 h-7 text-neonBlue"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Melhor Custo-Benefício</h3>
+                    <p class="text-sm text-slate-400">Peças direto dos maiores distribuidores pelo menor valor final.</p>
+      
